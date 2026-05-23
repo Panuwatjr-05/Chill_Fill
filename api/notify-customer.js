@@ -130,7 +130,7 @@ export default async function handler(req, res) {
             layout: 'horizontal',
             contents: [
               { type: 'text', text: 'เลขที่ออเดอร์:', size: 'sm', color: '#888888', flex: 2 },
-              { type: 'text', text: `#${shortId}`, size: 'sm', weight: 'bold', color: '#333', flex: 3 },
+              { type: 'text', text: `#${shortId}`, size: 'sm', weight: 'bold', color: '#333333', flex: 3 },
             ],
           },
           {
