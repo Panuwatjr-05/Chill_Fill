@@ -6,7 +6,7 @@ export async function placeOrder({ address, phone }, cartItems, lineUserId = nul
 
   const { data: order, error: orderError } = await supabase
     .from('orders')
-    .insert({ customer_name: '', address, phone, total })
+    .insert({ customer_name: '', address, phone, total, line_user_id: lineUserId })
     .select()
     .single()
 

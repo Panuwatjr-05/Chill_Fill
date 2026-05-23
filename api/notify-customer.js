@@ -176,7 +176,7 @@ export default async function handler(req, res) {
         contents: [
           {
             type: 'text',
-            text: '⚠️ เมื่อโอนเงินแล้ว กรุณาแนบสลิปกลับมานะครับ',
+            text: '📸 เมื่อโอนเงินแล้ว กรุณาส่งรูปสลิปในแชทนี้เลยครับ',
             size: 'xs',
             color: '#888888',
             wrap: true,
