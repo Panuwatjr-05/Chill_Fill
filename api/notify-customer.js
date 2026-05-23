@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
 
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN
-  const { lineUserId, order } = req.body
+  const { lineUserId, order, items } = req.body
 
   if (!token || !lineUserId) {
     return res.status(200).json({ ok: false, reason: 'Missing token or lineUserId' })
@@ -10,7 +10,94 @@ export default async function handler(req, res) {
 
   const shortId = order.id.slice(0, 8).toUpperCase()
 
-  const flexMessage = {
+  const itemRows = (items || []).map((item) => ({
+    type: 'box',
+    layout: 'horizontal',
+    contents: [
+      {
+        type: 'text',
+        text: `${item.menu_item_name} (${item.size}) x${item.quantity}`,
+        size: 'sm',
+        color: '#555555',
+        flex: 4,
+        wrap: true,
+      },
+      {
+        type: 'text',
+        text: `฿${(item.price * item.quantity).toFixed(0)}`,
+        size: 'sm',
+        color: '#111111',
+        align: 'end',
+        flex: 2,
+      },
+    ],
+  }))
+
+  const orderSummaryBubble = {
+    type: 'flex',
+    altText: `รายการอาหารที่สั่ง #${shortId}`,
+    contents: {
+      type: 'bubble',
+      styles: {
+        header: { backgroundColor: '#FFF0EA' },
+        footer: { backgroundColor: '#F8F8F8' },
+      },
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          { type: 'text', text: '🍽️ รายการอาหารที่สั่ง', weight: 'bold', size: 'lg', color: '#FF6B35' },
+        ],
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        contents: [
+          ...itemRows,
+          { type: 'separator', margin: 'md' },
+          {
+            type: 'box',
+            layout: 'horizontal',
+            margin: 'md',
+            contents: [
+              { type: 'text', text: '💰 ยอดรวมทั้งหมด', size: 'sm', weight: 'bold', flex: 3 },
+              {
+                type: 'text',
+                text: `฿${Number(order.total).toFixed(0)} บาท`,
+                size: 'sm',
+                weight: 'bold',
+                color: '#FF6B35',
+                align: 'end',
+                flex: 2,
+              },
+            ],
+          },
+          { type: 'separator', margin: 'md' },
+          {
+            type: 'box',
+            layout: 'vertical',
+            margin: 'md',
+            spacing: 'xs',
+            contents: [
+              { type: 'text', text: '📍 ที่อยู่จัดส่ง', size: 'xs', color: '#888888', weight: 'bold' },
+              { type: 'text', text: order.address, size: 'sm', wrap: true, color: '#333333' },
+              { type: 'text', text: `📞 ${order.phone}`, size: 'sm', color: '#333333', margin: 'sm' },
+            ],
+          },
+        ],
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          { type: 'text', text: `หมายเลขออเดอร์: #${shortId}`, size: 'xs', color: '#AAAAAA', align: 'center' },
+        ],
+      },
+    },
+  }
+
+  const paymentBubble = {
     type: 'flex',
     altText: `กรุณาชำระเงิน ฿${Number(order.total).toFixed(0)} ออเดอร์ #${shortId}`,
     contents: {
@@ -53,7 +140,7 @@ export default async function handler(req, res) {
               { type: 'text', text: 'ยอดรวม:', size: 'sm', color: '#888888', flex: 2 },
               {
                 type: 'text',
-                text: `${Number(order.total).toFixed(0)} บาท`,
+                text: `฿${Number(order.total).toFixed(0)} บาท`,
                 size: 'sm',
                 weight: 'bold',
                 color: '#FF6B35',
@@ -107,7 +194,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ to: lineUserId, messages: [flexMessage] }),
+      body: JSON.stringify({ to: lineUserId, messages: [orderSummaryBubble, paymentBubble] }),
     })
     const data = await lineRes.json()
     res.status(200).json(data)

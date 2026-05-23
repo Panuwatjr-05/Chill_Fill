@@ -25,7 +25,7 @@ export async function placeOrder({ address, phone }, cartItems, lineUserId = nul
   if (itemsError) throw itemsError
 
   notifyNewOrder(order, cartItems)
-  notifyCustomerPayment(lineUserId, order)
+  notifyCustomerPayment(lineUserId, order, cartItems)
 
   return { orderId: order.id }
 }

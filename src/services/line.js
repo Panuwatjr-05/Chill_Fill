@@ -10,13 +10,13 @@ export async function notifyNewOrder(order, items) {
   }
 }
 
-export async function notifyCustomerPayment(lineUserId, order) {
+export async function notifyCustomerPayment(lineUserId, order, items) {
   if (!lineUserId) return
   try {
     await fetch('/api/notify-customer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lineUserId, order }),
+      body: JSON.stringify({ lineUserId, order, items }),
     })
   } catch (e) {
     console.error('Failed to send customer payment notification:', e)
