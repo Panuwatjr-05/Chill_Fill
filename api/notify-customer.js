@@ -197,8 +197,10 @@ export default async function handler(req, res) {
       body: JSON.stringify({ to: lineUserId, messages: [orderSummaryBubble, paymentBubble] }),
     })
     const data = await lineRes.json()
-    res.status(200).json(data)
+    console.log('LINE API status:', lineRes.status, JSON.stringify(data))
+    res.status(200).json({ lineStatus: lineRes.status, ...data })
   } catch (e) {
+    console.error('notify-customer error:', e.message)
     res.status(500).json({ error: e.message })
   }
 }
