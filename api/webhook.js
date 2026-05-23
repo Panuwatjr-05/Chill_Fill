@@ -1,15 +1,7 @@
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 
-export const config = {
-  api: {
-    bodyParser: {
-      verify(req, res, buf) {
-        req.rawBody = buf
-      },
-    },
-  },
-}
+export const config = { api: { bodyParser: false } }
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
@@ -21,15 +13,27 @@ function verifySignature(rawBody, signature, secret) {
   return hash === signature
 }
 
+function readRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = []
+    req.on('data', (chunk) => chunks.push(chunk))
+    req.on('end', () => resolve(Buffer.concat(chunks)))
+    req.on('error', reject)
+  })
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
 
+  const rawBody = await readRawBody(req)
   const signature = req.headers['x-line-signature']
-  if (!verifySignature(req.rawBody, signature, process.env.LINE_CHANNEL_SECRET)) {
+
+  if (!verifySignature(rawBody, signature, process.env.LINE_CHANNEL_SECRET)) {
     return res.status(403).json({ error: 'Invalid signature' })
   }
 
-  const events = req.body.events || []
+  const body = JSON.parse(rawBody.toString())
+  const events = body.events || []
   await Promise.all(events.map(handleEvent))
   res.status(200).json({ ok: true })
 }
