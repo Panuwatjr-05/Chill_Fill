@@ -6,6 +6,7 @@ import MenuPage from './pages/MenuPage'
 import CartPage from './pages/CartPage'
 import OrderSuccessPage from './pages/OrderSuccessPage'
 import ContactPage from './pages/ContactPage'
+import SlipUploadPage from './pages/SlipUploadPage'
 import './index.css'
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
               <Route path="/cart" element={<CartPage />} />
               <Route path="/order-success/:id" element={<OrderSuccessPage />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route path="/slip-upload" element={<SlipUploadPage />} />
             </Routes>
           </main>
         </BrowserRouter>

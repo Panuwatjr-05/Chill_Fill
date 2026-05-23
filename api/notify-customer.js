@@ -173,21 +173,16 @@ export default async function handler(req, res) {
       footer: {
         type: 'box',
         layout: 'vertical',
-        spacing: 'sm',
         contents: [
           {
             type: 'button',
-            action: { type: 'cameraRoll', label: '📸 แนบสลิปการโอนเงิน' },
+            action: {
+              type: 'uri',
+              label: '📸 แนบสลิปการโอนเงิน',
+              uri: `https://liff.line.me/2010175611-NW7mjoIg/slip-upload?orderId=${order.id}`,
+            },
             style: 'primary',
             color: '#FF6B35',
-          },
-          {
-            type: 'text',
-            text: 'กดปุ่มด้านบนเพื่อเลือกรูปสลิปจาก Gallery',
-            size: 'xs',
-            color: '#AAAAAA',
-            wrap: true,
-            align: 'center',
           },
         ],
       },
