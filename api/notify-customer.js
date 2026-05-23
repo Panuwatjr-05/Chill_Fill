@@ -173,12 +173,19 @@ export default async function handler(req, res) {
       footer: {
         type: 'box',
         layout: 'vertical',
+        spacing: 'sm',
         contents: [
           {
+            type: 'button',
+            action: { type: 'cameraRoll', label: '📸 แนบสลิปการโอนเงิน' },
+            style: 'primary',
+            color: '#FF6B35',
+          },
+          {
             type: 'text',
-            text: '📸 เมื่อโอนเงินแล้ว กรุณาส่งรูปสลิปในแชทนี้เลยครับ',
+            text: 'กดปุ่มด้านบนเพื่อเลือกรูปสลิปจาก Gallery',
             size: 'xs',
-            color: '#888888',
+            color: '#AAAAAA',
             wrap: true,
             align: 'center',
           },
