@@ -6,7 +6,7 @@ import { placeOrder } from '../services/orderService'
 
 export default function CartPage() {
   const { items, total, dispatch } = useCart()
-  const { lineUserId, liffReady } = useLiff()
+  const { lineUserId } = useLiff()
   const navigate = useNavigate()
   const [form, setForm] = useState({ address: '', phone: '' })
   const [submitting, setSubmitting] = useState(false)
@@ -98,10 +98,6 @@ export default function CartPage() {
           </li>
         ))}
       </ul>
-
-      <p style={{ fontSize: '11px', color: '#aaa', textAlign: 'center', margin: '4px 0' }}>
-        LIFF: {liffReady ? (lineUserId ? '✅ ' + lineUserId.slice(0, 8) : '❌ no userId') : '⏳ loading'}
-      </p>
 
       <form className="checkout-form" onSubmit={handleSubmit}>
         <label className="checkout-label">
