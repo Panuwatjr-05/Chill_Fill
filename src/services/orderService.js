@@ -1,12 +1,7 @@
 import { supabase } from './supabase'
-import { notifyNewOrder } from './line'
+import { notifyNewOrder, notifyCustomerPayment } from './line'
 
-/**
- * สร้างออเดอร์ใหม่ บันทึกลง Supabase และแจ้ง LINE
- * @param {{ address, phone }} deliveryInfo
- * @param {Array} cartItems
- */
-export async function placeOrder({ address, phone }, cartItems) {
+export async function placeOrder({ address, phone }, cartItems, lineUserId = null) {
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   const { data: order, error: orderError } = await supabase
@@ -30,6 +25,7 @@ export async function placeOrder({ address, phone }, cartItems) {
   if (itemsError) throw itemsError
 
   notifyNewOrder(order, cartItems)
+  notifyCustomerPayment(lineUserId, order)
 
   return { orderId: order.id }
 }

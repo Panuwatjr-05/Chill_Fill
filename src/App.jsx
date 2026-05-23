@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { CartProvider } from './context/CartContext'
+import { LiffProvider } from './context/LiffContext'
 import Navbar from './components/Navbar'
 import MenuPage from './pages/MenuPage'
 import CartPage from './pages/CartPage'
@@ -9,18 +10,20 @@ import './index.css'
 
 export default function App() {
   return (
-    <CartProvider>
-      <BrowserRouter>
-        <Navbar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<MenuPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/order-success/:id" element={<OrderSuccessPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-          </Routes>
-        </main>
-      </BrowserRouter>
-    </CartProvider>
+    <LiffProvider>
+      <CartProvider>
+        <BrowserRouter>
+          <Navbar />
+          <main className="main-content">
+            <Routes>
+              <Route path="/" element={<MenuPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/order-success/:id" element={<OrderSuccessPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+            </Routes>
+          </main>
+        </BrowserRouter>
+      </CartProvider>
+    </LiffProvider>
   )
 }

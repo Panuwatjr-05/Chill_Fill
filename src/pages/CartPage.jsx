@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { useLiff } from '../context/LiffContext'
 import { placeOrder } from '../services/orderService'
 
 export default function CartPage() {
   const { items, total, dispatch } = useCart()
+  const { lineUserId } = useLiff()
   const navigate = useNavigate()
   const [form, setForm] = useState({ address: '', phone: '' })
   const [submitting, setSubmitting] = useState(false)
@@ -23,7 +25,7 @@ export default function CartPage() {
     setError('')
     setSubmitting(true)
     try {
-      const { orderId } = await placeOrder(form, items)
+      const { orderId } = await placeOrder(form, items, lineUserId)
       dispatch({ type: 'CLEAR' })
       navigate(`/order-success/${orderId}`)
     } catch (err) {
