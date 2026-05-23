@@ -29,7 +29,7 @@ export default function SlipUploadPage() {
       const fileName = `${orderId}_${Date.now()}.jpg`
       const { error: uploadError } = await supabase.storage
         .from('slips')
-        .upload(fileName, file, { contentType: file.type, upsert: true })
+        .upload(fileName, file, { contentType: file.type })
       if (uploadError) throw uploadError
 
       const slipUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/slips/${fileName}`
