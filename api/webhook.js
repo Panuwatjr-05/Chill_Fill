@@ -96,7 +96,6 @@ async function handleSlipImage(event) {
   const shortId = order.id.slice(0, 8).toUpperCase()
 
   await pushMessage(process.env.LINE_USER_ID, [
-    { type: 'image', originalContentUrl: slipUrl, previewImageUrl: slipUrl },
     {
       type: 'flex',
       altText: `💳 ลูกค้าส่งสลิป ออเดอร์ #${shortId}`,
@@ -109,6 +108,13 @@ async function handleSlipImage(event) {
           contents: [
             { type: 'text', text: '💳 ลูกค้าส่งสลิปมาแล้ว', weight: 'bold', size: 'md', color: '#1565C0' },
           ],
+        },
+        hero: {
+          type: 'image',
+          url: slipUrl,
+          size: 'full',
+          aspectRatio: '20:13',
+          aspectMode: 'cover',
         },
         body: {
           type: 'box',
