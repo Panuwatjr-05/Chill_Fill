@@ -41,7 +41,8 @@ export default function SlipUploadPage() {
       })
       setDone(true)
     } catch (err) {
-      setError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')
+      console.error('slip upload error:', err)
+      setError(`เกิดข้อผิดพลาด: ${err.message || JSON.stringify(err)}`)
     } finally {
       setUploading(false)
     }
