@@ -11,6 +11,9 @@ export default function Navbar() {
         CHILL FILL
       </span>
       <div className="navbar-actions">
+        <button className="navbar-icon" onClick={() => navigate('/admin')} title="Admin">
+          ⚙️
+        </button>
         <button className="navbar-icon" onClick={() => navigate('/contact')} title="ติดต่อร้าน">
           📞
         </button>
