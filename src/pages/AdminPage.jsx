@@ -47,6 +47,7 @@ export default function AdminPage() {
   const [orders, setOrders] = useState([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [expandedOrder, setExpandedOrder] = useState(null)
+  const [confirming, setConfirming] = useState(null)
 
   const authHeaders = { 'Content-Type': 'application/json', 'x-admin-pin': storedPin }
 
@@ -68,6 +69,17 @@ export default function AdminPage() {
 
   useEffect(() => { if (authed) fetchItems() }, [authed, fetchItems])
   useEffect(() => { if (authed && tab === 'orders') fetchOrders() }, [authed, tab, fetchOrders])
+
+  async function handleConfirm(orderId) {
+    setConfirming(orderId)
+    await fetch('/api/admin-confirm', {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({ orderId }),
+    })
+    setConfirming(null)
+    fetchOrders()
+  }
 
   function handleLogin(e) {
     e.preventDefault()
@@ -234,9 +246,16 @@ export default function AdminPage() {
                           ))}
                         </div>
                         {order.slip_url && (
-                          <a href={order.slip_url} target="_blank" rel="noreferrer" className="admin-order-slip">
-                            🧾 ดูสลิป
-                          </a>
+                          <img src={order.slip_url} alt="slip" className="admin-slip-img" onClick={(e) => e.stopPropagation()} />
+                        )}
+                        {order.status === 'slip_received' && (
+                          <button
+                            className="btn-primary admin-confirm-btn"
+                            disabled={confirming === order.id}
+                            onClick={(e) => { e.stopPropagation(); handleConfirm(order.id) }}
+                          >
+                            {confirming === order.id ? 'กำลังยืนยัน...' : '✅ ยืนยันชำระเงินแล้ว'}
+                          </button>
                         )}
                       </div>
                     )}
