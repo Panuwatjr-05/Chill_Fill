@@ -72,6 +72,22 @@ export default async function handler(req, res) {
                   { type: 'text', text: '⏳ กำลังตรวจสอบการชำระเงิน รอสักครู่นะครับ', size: 'sm', color: '#555555', wrap: true, margin: 'md' },
                 ],
               },
+              footer: {
+                type: 'box',
+                layout: 'vertical',
+                contents: [
+                  {
+                    type: 'button',
+                    action: {
+                      type: 'uri',
+                      label: '✅ ยืนยันชำระเงิน (เจ้าของร้าน)',
+                      uri: `https://chill-fill.vercel.app/quick-confirm?orderId=${orderId}`,
+                    },
+                    style: 'primary',
+                    color: '#2E7D32',
+                  },
+                ],
+              },
             },
           },
         ],

@@ -8,6 +8,7 @@ import OrderSuccessPage from './pages/OrderSuccessPage'
 import ContactPage from './pages/ContactPage'
 import SlipUploadPage from './pages/SlipUploadPage'
 import AdminPage from './pages/AdminPage'
+import QuickConfirmPage from './pages/QuickConfirmPage'
 import './index.css'
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/slip-upload" element={<SlipUploadPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/quick-confirm" element={<QuickConfirmPage />} />
             </Routes>
           </main>
         </BrowserRouter>
