@@ -3,37 +3,71 @@ import { useState, useEffect, useCallback } from 'react'
 const CATEGORIES = ['ข้าว', 'ก๋วยเตี๋ยว', 'ชา', 'กาแฟ']
 const SIZE_OPTIONS = ['S', 'M', 'L']
 
+const STATUS_LABEL = {
+  pending: 'รอสลิป',
+  slip_received: 'รอยืนยัน',
+  confirmed: 'ยืนยันแล้ว',
+  preparing: 'กำลังเตรียม',
+  delivering: 'กำลังส่ง',
+  completed: 'เสร็จสิ้น',
+  cancelled: 'ยกเลิก',
+}
+const STATUS_COLOR = {
+  pending: '#888888',
+  slip_received: '#1565C0',
+  confirmed: '#2E7D32',
+  preparing: '#E65100',
+  delivering: '#6A1B9A',
+  completed: '#2E7D32',
+  cancelled: '#C62828',
+}
+const REVENUE_STATUSES = new Set(['confirmed', 'preparing', 'delivering', 'completed'])
+
 function emptyForm() {
   return { name: '', category: 'ข้าว', description: '', image_url: '', is_available: true, sizes: [] }
+}
+
+function formatDate(iso) {
+  const d = new Date(iso)
+  return d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
 export default function AdminPage() {
   const [pin, setPin] = useState('')
   const [storedPin, setStoredPin] = useState(() => sessionStorage.getItem('admin_pin') || '')
   const [authed, setAuthed] = useState(() => !!sessionStorage.getItem('admin_pin'))
+  const [tab, setTab] = useState('menu')
+
   const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [menuLoading, setMenuLoading] = useState(false)
   const [modal, setModal] = useState(null)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
 
+  const [orders, setOrders] = useState([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
+  const [expandedOrder, setExpandedOrder] = useState(null)
+
   const authHeaders = { 'Content-Type': 'application/json', 'x-admin-pin': storedPin }
 
   const fetchItems = useCallback(async () => {
-    setLoading(true)
+    setMenuLoading(true)
     const res = await fetch('/api/admin-menu', { headers: { 'x-admin-pin': storedPin } })
-    if (res.status === 401) {
-      sessionStorage.removeItem('admin_pin')
-      setAuthed(false)
-      setLoading(false)
-      return
-    }
-    const data = await res.json()
-    setItems(data)
-    setLoading(false)
+    if (res.status === 401) { sessionStorage.removeItem('admin_pin'); setAuthed(false); setMenuLoading(false); return }
+    setItems(await res.json())
+    setMenuLoading(false)
+  }, [storedPin])
+
+  const fetchOrders = useCallback(async () => {
+    setOrdersLoading(true)
+    const res = await fetch('/api/admin-orders', { headers: { 'x-admin-pin': storedPin } })
+    if (res.status === 401) { sessionStorage.removeItem('admin_pin'); setAuthed(false); setOrdersLoading(false); return }
+    setOrders(await res.json())
+    setOrdersLoading(false)
   }, [storedPin])
 
   useEffect(() => { if (authed) fetchItems() }, [authed, fetchItems])
+  useEffect(() => { if (authed && tab === 'orders') fetchOrders() }, [authed, tab, fetchOrders])
 
   function handleLogin(e) {
     e.preventDefault()
@@ -46,25 +80,14 @@ export default function AdminPage() {
     await fetch('/api/admin-menu', {
       method: 'PUT',
       headers: authHeaders,
-      body: JSON.stringify({
-        id: item.id,
-        name: item.name,
-        category: item.category,
-        description: item.description,
-        image_url: item.image_url,
-        is_available: !item.is_available,
-      }),
+      body: JSON.stringify({ id: item.id, name: item.name, category: item.category, description: item.description, image_url: item.image_url, is_available: !item.is_available }),
     })
     fetchItems()
   }
 
   async function handleDelete(id) {
     if (!confirm('ลบเมนูนี้?')) return
-    await fetch('/api/admin-menu', {
-      method: 'DELETE',
-      headers: authHeaders,
-      body: JSON.stringify({ id }),
-    })
+    await fetch('/api/admin-menu', { method: 'DELETE', headers: authHeaders, body: JSON.stringify({ id }) })
     fetchItems()
   }
 
@@ -72,9 +95,8 @@ export default function AdminPage() {
     setSaving(true)
     setFormError('')
     const sizes = form.sizes.filter((s) => s.price !== '' && s.price !== null)
-    const method = form.id ? 'PUT' : 'POST'
     const res = await fetch('/api/admin-menu', {
-      method,
+      method: form.id ? 'PUT' : 'POST',
       headers: authHeaders,
       body: JSON.stringify({ ...form, sizes }),
     })
@@ -95,14 +117,7 @@ export default function AdminPage() {
           <p className="admin-login-icon">🔐</p>
           <h2>Admin</h2>
           <form onSubmit={handleLogin}>
-            <input
-              type="password"
-              placeholder="รหัส PIN"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              className="form-input"
-              autoFocus
-            />
+            <input type="password" placeholder="รหัส PIN" value={pin} onChange={(e) => setPin(e.target.value)} className="form-input" autoFocus />
             <button type="submit" className="btn-primary">เข้าสู่ระบบ</button>
           </form>
         </div>
@@ -110,77 +125,127 @@ export default function AdminPage() {
     )
   }
 
+  const totalRevenue = orders.filter((o) => REVENUE_STATUSES.has(o.status)).reduce((s, o) => s + Number(o.total), 0)
+  const revenueOrders = orders.filter((o) => REVENUE_STATUSES.has(o.status)).length
+
   return (
     <div className="admin-page">
-      <div className="admin-header">
-        <h2>จัดการเมนู</h2>
-        <button className="btn-primary btn-sm" onClick={() => { setFormError(''); setModal(emptyForm()) }}>
-          + เพิ่มเมนู
-        </button>
+      <div className="admin-tabs">
+        <button className={`admin-tab${tab === 'menu' ? ' admin-tab--active' : ''}`} onClick={() => setTab('menu')}>🍽️ เมนู</button>
+        <button className={`admin-tab${tab === 'orders' ? ' admin-tab--active' : ''}`} onClick={() => setTab('orders')}>📋 ออเดอร์</button>
       </div>
 
-      {loading ? (
-        <p className="admin-loading">กำลังโหลด...</p>
-      ) : (
-        <div className="admin-list">
-          {items.map((item) => (
-            <div key={item.id} className={`admin-item${!item.is_available ? ' admin-item--off' : ''}`}>
-              {item.image_url ? (
-                <img src={item.image_url} alt={item.name} className="admin-item-img" />
-              ) : (
-                <div className="admin-item-img admin-item-img--placeholder">🍽️</div>
-              )}
-              <div className="admin-item-info">
-                <div className="admin-item-name">{item.name}</div>
-                <div className="admin-item-meta">
-                  {item.category}
-                  {item.menu_sizes?.length > 0 && (
-                    <> · {item.menu_sizes.map((s) => `${s.size}:฿${Number(s.price).toFixed(0)}`).join(' / ')}</>
+      {tab === 'menu' && (
+        <>
+          <div className="admin-header">
+            <h2>จัดการเมนู</h2>
+            <button className="btn-primary btn-sm" onClick={() => { setFormError(''); setModal(emptyForm()) }}>+ เพิ่มเมนู</button>
+          </div>
+          {menuLoading ? <p className="admin-loading">กำลังโหลด...</p> : (
+            <div className="admin-list">
+              {items.map((item) => (
+                <div key={item.id} className={`admin-item${!item.is_available ? ' admin-item--off' : ''}`}>
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} className="admin-item-img" />
+                  ) : (
+                    <div className="admin-item-img admin-item-img--placeholder">🍽️</div>
                   )}
+                  <div className="admin-item-info">
+                    <div className="admin-item-name">{item.name}</div>
+                    <div className="admin-item-meta">
+                      {item.category}
+                      {item.menu_sizes?.length > 0 && <> · {item.menu_sizes.map((s) => `${s.size}:฿${Number(s.price).toFixed(0)}`).join(' / ')}</>}
+                    </div>
+                  </div>
+                  <div className="admin-item-actions">
+                    <button className={`btn-toggle${item.is_available ? ' btn-toggle--on' : ''}`} onClick={() => handleToggle(item)}>
+                      {item.is_available ? 'เปิด' : 'ปิด'}
+                    </button>
+                    <button className="btn-icon" onClick={() => {
+                      setFormError('')
+                      setModal({
+                        id: item.id, name: item.name, category: item.category,
+                        description: item.description || '', image_url: item.image_url || '',
+                        is_available: item.is_available,
+                        sizes: item.menu_sizes?.map((s) => ({ size: s.size, price: String(Number(s.price).toFixed(0)) })) || [],
+                      })
+                    }}>✏️</button>
+                    <button className="btn-icon btn-icon--danger" onClick={() => handleDelete(item.id)}>🗑️</button>
+                  </div>
                 </div>
-              </div>
-              <div className="admin-item-actions">
-                <button
-                  className={`btn-toggle${item.is_available ? ' btn-toggle--on' : ''}`}
-                  onClick={() => handleToggle(item)}
-                >
-                  {item.is_available ? 'เปิด' : 'ปิด'}
-                </button>
-                <button
-                  className="btn-icon"
-                  onClick={() => {
-                    setFormError('')
-                    setModal({
-                      id: item.id,
-                      name: item.name,
-                      category: item.category,
-                      description: item.description || '',
-                      image_url: item.image_url || '',
-                      is_available: item.is_available,
-                      sizes: item.menu_sizes?.map((s) => ({ size: s.size, price: String(Number(s.price).toFixed(0)) })) || [],
-                    })
-                  }}
-                >
-                  ✏️
-                </button>
-                <button className="btn-icon btn-icon--danger" onClick={() => handleDelete(item.id)}>
-                  🗑️
-                </button>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+          {modal && (
+            <MenuModal form={modal} saving={saving} error={formError} adminPin={storedPin}
+              onSave={handleSave} onClose={() => { setModal(null); setFormError('') }} />
+          )}
+        </>
       )}
 
-      {modal && (
-        <MenuModal
-          form={modal}
-          saving={saving}
-          error={formError}
-          adminPin={storedPin}
-          onSave={handleSave}
-          onClose={() => { setModal(null); setFormError('') }}
-        />
+      {tab === 'orders' && (
+        <>
+          <div className="admin-header">
+            <h2>ออเดอร์ทั้งหมด</h2>
+            <button className="btn-sm btn-secondary" onClick={fetchOrders}>↻ รีเฟรช</button>
+          </div>
+
+          {ordersLoading ? <p className="admin-loading">กำลังโหลด...</p> : (
+            <>
+              <div className="admin-revenue-cards">
+                <div className="admin-revenue-card">
+                  <div className="admin-revenue-label">รายได้รวม</div>
+                  <div className="admin-revenue-value">฿{totalRevenue.toLocaleString()}</div>
+                  <div className="admin-revenue-sub">{revenueOrders} ออเดอร์ที่ยืนยันแล้ว</div>
+                </div>
+                <div className="admin-revenue-card">
+                  <div className="admin-revenue-label">ออเดอร์ทั้งหมด</div>
+                  <div className="admin-revenue-value">{orders.length}</div>
+                  <div className="admin-revenue-sub">รอสลิป {orders.filter(o => o.status === 'pending').length} · รอยืนยัน {orders.filter(o => o.status === 'slip_received').length}</div>
+                </div>
+              </div>
+
+              <div className="admin-list">
+                {orders.map((order) => (
+                  <div key={order.id} className="admin-order-card" onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}>
+                    <div className="admin-order-row">
+                      <div className="admin-order-left">
+                        <div className="admin-order-id">#{order.id.slice(0, 8).toUpperCase()}</div>
+                        <div className="admin-order-date">{formatDate(order.created_at)}</div>
+                      </div>
+                      <div className="admin-order-right">
+                        <div className="admin-order-total">฿{Number(order.total).toFixed(0)}</div>
+                        <span className="admin-order-badge" style={{ background: STATUS_COLOR[order.status] + '22', color: STATUS_COLOR[order.status] }}>
+                          {STATUS_LABEL[order.status] || order.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {expandedOrder === order.id && (
+                      <div className="admin-order-detail">
+                        <div className="admin-order-info-row"><span>📞</span> {order.phone}</div>
+                        <div className="admin-order-info-row"><span>📍</span> {order.address}</div>
+                        <div className="admin-order-items">
+                          {order.order_items?.map((oi) => (
+                            <div key={oi.id} className="admin-order-item-row">
+                              <span>{oi.menu_items?.name} ({oi.size}) ×{oi.quantity}</span>
+                              <span>฿{(Number(oi.price) * oi.quantity).toFixed(0)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {order.slip_url && (
+                          <a href={order.slip_url} target="_blank" rel="noreferrer" className="admin-order-slip">
+                            🧾 ดูสลิป
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </>
       )}
     </div>
   )
@@ -200,23 +265,17 @@ function MenuModal({ form: initial, saving, error, onSave, onClose, adminPin }) 
   const [form, setForm] = useState(initial)
   const [imageUploading, setImageUploading] = useState(false)
 
-  function setField(key, value) {
-    setForm((f) => ({ ...f, [key]: value }))
-  }
+  function setField(key, value) { setForm((f) => ({ ...f, [key]: value })) }
 
   function setSizePrice(size, price) {
     setForm((f) => {
       const existing = f.sizes.find((s) => s.size === size)
-      if (existing) {
-        return { ...f, sizes: f.sizes.map((s) => (s.size === size ? { ...s, price } : s)) }
-      }
+      if (existing) return { ...f, sizes: f.sizes.map((s) => (s.size === size ? { ...s, price } : s)) }
       return { ...f, sizes: [...f.sizes, { size, price }] }
     })
   }
 
-  function getSizePrice(size) {
-    return form.sizes.find((s) => s.size === size)?.price ?? ''
-  }
+  function getSizePrice(size) { return form.sizes.find((s) => s.size === size)?.price ?? '' }
 
   async function handleImageChange(e) {
     const file = e.target.files[0]
@@ -249,15 +308,9 @@ function MenuModal({ form: initial, saving, error, onSave, onClose, adminPin }) 
           <h3>{form.id ? 'แก้ไขเมนู' : 'เพิ่มเมนูใหม่'}</h3>
           <button className="btn-icon" onClick={onClose}>✕</button>
         </div>
-
         <div className="admin-modal-body">
           <label className="form-label">ชื่อเมนู *</label>
-          <input
-            className="form-input"
-            value={form.name}
-            onChange={(e) => setField('name', e.target.value)}
-            placeholder="เช่น ข้าวผัดกะเพรา"
-          />
+          <input className="form-input" value={form.name} onChange={(e) => setField('name', e.target.value)} placeholder="เช่น ข้าวผัดกะเพรา" />
 
           <label className="form-label">หมวดหมู่</label>
           <select className="form-input" value={form.category} onChange={(e) => setField('category', e.target.value)}>
@@ -265,12 +318,7 @@ function MenuModal({ form: initial, saving, error, onSave, onClose, adminPin }) 
           </select>
 
           <label className="form-label">คำอธิบาย</label>
-          <textarea
-            className="form-input form-textarea"
-            value={form.description}
-            onChange={(e) => setField('description', e.target.value)}
-            placeholder="รายละเอียดเมนู (ไม่บังคับ)"
-          />
+          <textarea className="form-input form-textarea" value={form.description} onChange={(e) => setField('description', e.target.value)} placeholder="รายละเอียดเมนู (ไม่บังคับ)" />
 
           <label className="form-label">รูปภาพ</label>
           <label className="admin-img-upload">
@@ -279,17 +327,12 @@ function MenuModal({ form: initial, saving, error, onSave, onClose, adminPin }) 
             ) : form.image_url ? (
               <img src={form.image_url} alt="preview" className="admin-img-preview" />
             ) : (
-              <div className="admin-img-placeholder">
-                <span>📷</span>
-                <p>กดเพื่อเลือกรูป</p>
-              </div>
+              <div className="admin-img-placeholder"><span>📷</span><p>กดเพื่อเลือกรูป</p></div>
             )}
             <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
           </label>
           {form.image_url && (
-            <button className="btn-secondary" style={{ fontSize: '.8rem', padding: '6px 12px' }} onClick={() => setField('image_url', '')}>
-              ลบรูป
-            </button>
+            <button className="btn-secondary" style={{ fontSize: '.8rem', padding: '6px 12px' }} onClick={() => setField('image_url', '')}>ลบรูป</button>
           )}
 
           <label className="form-label">ราคาตามขนาด (ใส่เฉพาะขนาดที่มี)</label>
@@ -297,21 +340,13 @@ function MenuModal({ form: initial, saving, error, onSave, onClose, adminPin }) 
             {SIZE_OPTIONS.map((size) => (
               <div key={size} className="admin-size-row">
                 <span className="admin-size-label">{size}</span>
-                <input
-                  type="number"
-                  className="form-input admin-size-input"
-                  placeholder="ราคา (฿)"
-                  value={getSizePrice(size)}
-                  onChange={(e) => setSizePrice(size, e.target.value)}
-                  min="0"
-                />
+                <input type="number" className="form-input admin-size-input" placeholder="ราคา (฿)" value={getSizePrice(size)} onChange={(e) => setSizePrice(size, e.target.value)} min="0" />
               </div>
             ))}
           </div>
 
           {error && <p className="form-error">{error}</p>}
         </div>
-
         <div className="admin-modal-footer">
           <button className="btn-secondary" onClick={onClose}>ยกเลิก</button>
           <button className="btn-primary" onClick={() => onSave(form)} disabled={saving || !form.name || imageUploading}>
