@@ -177,6 +177,7 @@ export default function AdminPage() {
           form={modal}
           saving={saving}
           error={formError}
+          adminPin={storedPin}
           onSave={handleSave}
           onClose={() => { setModal(null); setFormError('') }}
         />
@@ -185,8 +186,19 @@ export default function AdminPage() {
   )
 }
 
-function MenuModal({ form: initial, saving, error, onSave, onClose }) {
+async function compressImage(file, maxPx = 900) {
+  const bitmap = await createImageBitmap(file)
+  const ratio = Math.min(maxPx / bitmap.width, maxPx / bitmap.height, 1)
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(bitmap.width * ratio)
+  canvas.height = Math.round(bitmap.height * ratio)
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82))
+}
+
+function MenuModal({ form: initial, saving, error, onSave, onClose, adminPin }) {
   const [form, setForm] = useState(initial)
+  const [imageUploading, setImageUploading] = useState(false)
 
   function setField(key, value) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -204,6 +216,30 @@ function MenuModal({ form: initial, saving, error, onSave, onClose }) {
 
   function getSizePrice(size) {
     return form.sizes.find((s) => s.size === size)?.price ?? ''
+  }
+
+  async function handleImageChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setImageUploading(true)
+    try {
+      const compressed = await compressImage(file)
+      const reader = new FileReader()
+      reader.onload = async () => {
+        const base64 = reader.result.split(',')[1]
+        const fileName = `${Date.now()}.jpg`
+        const res = await fetch('/api/admin-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-pin': adminPin },
+          body: JSON.stringify({ fileData: base64, fileType: 'image/jpeg', fileName }),
+        })
+        const data = await res.json()
+        if (data.url) setField('image_url', data.url)
+      }
+      reader.readAsDataURL(compressed)
+    } finally {
+      setImageUploading(false)
+    }
   }
 
   return (
@@ -236,13 +272,25 @@ function MenuModal({ form: initial, saving, error, onSave, onClose }) {
             placeholder="รายละเอียดเมนู (ไม่บังคับ)"
           />
 
-          <label className="form-label">URL รูปภาพ</label>
-          <input
-            className="form-input"
-            value={form.image_url}
-            onChange={(e) => setField('image_url', e.target.value)}
-            placeholder="https://... (ไม่บังคับ)"
-          />
+          <label className="form-label">รูปภาพ</label>
+          <label className="admin-img-upload">
+            {imageUploading ? (
+              <div className="admin-img-uploading">กำลังอัปโหลด...</div>
+            ) : form.image_url ? (
+              <img src={form.image_url} alt="preview" className="admin-img-preview" />
+            ) : (
+              <div className="admin-img-placeholder">
+                <span>📷</span>
+                <p>กดเพื่อเลือกรูป</p>
+              </div>
+            )}
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
+          </label>
+          {form.image_url && (
+            <button className="btn-secondary" style={{ fontSize: '.8rem', padding: '6px 12px' }} onClick={() => setField('image_url', '')}>
+              ลบรูป
+            </button>
+          )}
 
           <label className="form-label">ราคาตามขนาด (ใส่เฉพาะขนาดที่มี)</label>
           <div className="admin-sizes">
@@ -266,7 +314,7 @@ function MenuModal({ form: initial, saving, error, onSave, onClose }) {
 
         <div className="admin-modal-footer">
           <button className="btn-secondary" onClick={onClose}>ยกเลิก</button>
-          <button className="btn-primary" onClick={() => onSave(form)} disabled={saving || !form.name}>
+          <button className="btn-primary" onClick={() => onSave(form)} disabled={saving || !form.name || imageUploading}>
             {saving ? 'กำลังบันทึก...' : 'บันทึก'}
           </button>
         </div>
