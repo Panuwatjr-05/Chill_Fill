@@ -8,6 +8,13 @@ const CATEGORY_EMOJI = {
   กาแฟ: '☕',
 }
 
+const FOOD_CATEGORIES = new Set(['ข้าว', 'ก๋วยเตี๋ยว'])
+const SIZE_DISPLAY = { S: 'ธรรมดา', M: 'พิเศษ', L: 'L' }
+
+function getSizeLabel(size, category) {
+  return FOOD_CATEGORIES.has(category) ? (SIZE_DISPLAY[size] ?? size) : size
+}
+
 export default function ItemDetailModal({ item, onClose }) {
   const { dispatch } = useCart()
   const [selectedSize, setSelectedSize] = useState(item.sizes?.[0] ?? null)
@@ -71,7 +78,7 @@ export default function ItemDetailModal({ item, onClose }) {
                     className={`size-btn ${selectedSize?.size === s.size ? 'size-btn--active' : ''}`}
                     onClick={() => setSelectedSize(s)}
                   >
-                    <span className="size-btn-label">{s.size}</span>
+                    <span className="size-btn-label">{getSizeLabel(s.size, item.category)}</span>
                     <span className="size-btn-price">฿{Number(s.price).toFixed(0)}</span>
                   </button>
                 ))}
