@@ -351,7 +351,14 @@ function MenuModal({ form: initial, saving, error, onSave, onClose, adminPin }) 
             ) : form.image_url ? (
               <img src={form.image_url} alt="preview" className="admin-img-preview" />
             ) : (
-              <div className="admin-img-placeholder"><span>📷</span><p>กดเพื่อเลือกรูป</p></div>
+              <div className="admin-img-placeholder">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="7" width="18" height="13" rx="2"/>
+                  <circle cx="12" cy="13" r="3"/>
+                  <path d="M8 7l1.5-3h5L16 7"/>
+                </svg>
+                <p>กดเพื่ออัปโหลดรูปภาพ</p>
+              </div>
             )}
             <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
           </label>
