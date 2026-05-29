@@ -366,12 +366,12 @@ function MenuModal({ form: initial, saving, error, onSave, onClose, adminPin }) 
             <button className="btn-secondary" style={{ fontSize: '.8rem', padding: '6px 12px' }} onClick={() => setField('image_url', '')}>ลบรูป</button>
           )}
 
-          <label className="form-label">ราคาตามขนาด (ใส่เฉพาะขนาดที่มี)</label>
+          <label className="form-label">ราคาตามขนาด</label>
           <div className="admin-sizes">
             {SIZE_OPTIONS.map((size) => (
               <div key={size} className="admin-size-row">
                 <span className="admin-size-label">{size}</span>
-                <input type="number" className="form-input admin-size-input" placeholder="ราคา (฿)" value={getSizePrice(size)} onChange={(e) => setSizePrice(size, e.target.value)} min="0" />
+                <input type="number" className="form-input admin-size-input" placeholder="฿" value={getSizePrice(size)} onChange={(e) => setSizePrice(size, e.target.value)} min="0" />
               </div>
             ))}
           </div>
