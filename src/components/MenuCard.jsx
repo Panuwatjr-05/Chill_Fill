@@ -9,28 +9,12 @@ const CATEGORY_EMOJI = {
 }
 
 export default function MenuCard({ item, onDetail }) {
-  const { dispatch } = useCart()
-  const [flash, setFlash] = useState(false)
-
-  function addToCart(e) {
-    e.stopPropagation()
-    dispatch({
-      type: 'ADD_ITEM',
-      item: {
-        menu_item_id: item.menu_item_id,
-        menu_item_name: item.name,
-        size: item.size,
-        price: item.price,
-        quantity: 1,
-        note: '',
-      },
-    })
-    setFlash(true)
-    setTimeout(() => setFlash(false), 800)
-  }
+  const minPrice = item.sizes?.[0]?.price ?? item.price
+  const hasMultipleSizes = item.sizes?.length > 1
+  const priceLabel = hasMultipleSizes ? `เริ่ม ฿${minPrice}` : `฿${minPrice}`
 
   return (
-    <div className="menu-card">
+    <div className="menu-card" onClick={() => onDetail(item)}>
       <div className="menu-card-img">
         {item.image_url ? (
           <img src={item.image_url} alt={item.name} />
@@ -41,13 +25,13 @@ export default function MenuCard({ item, onDetail }) {
       <div className="menu-card-body">
         <p className="menu-card-category">{item.category}</p>
         <h3 className="menu-card-name">{item.name}</h3>
-        <p className="menu-card-price">฿{item.price} บาท</p>
+        <p className="menu-card-price">{priceLabel} บาท</p>
       </div>
       <div className="menu-card-actions">
-        <button className={`btn-add-quick ${flash ? 'flash' : ''}`} onClick={addToCart}>
-          {flash ? '✓ เพิ่มแล้ว' : 'เพิ่มตะกร้า'}
+        <button className="btn-add-quick" onClick={(e) => { e.stopPropagation(); onDetail(item) }}>
+          เพิ่มตะกร้า
         </button>
-        <button className="btn-detail" onClick={() => onDetail(item)}>
+        <button className="btn-detail" onClick={(e) => { e.stopPropagation(); onDetail(item) }}>
           ดูรายละเอียด
         </button>
       </div>

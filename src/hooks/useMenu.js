@@ -18,21 +18,22 @@ export function useMenu() {
       if (error) {
         setError(error.message)
       } else {
-        const flat = data.flatMap((item) =>
-          [...item.menu_sizes]
-            .sort((a, b) => ['S', 'M', 'L'].indexOf(a.size) - ['S', 'M', 'L'].indexOf(b.size))
-            .map((s) => ({
-              cardKey: `${item.id}-${s.size}`,
-              menu_item_id: item.id,
-              name: item.name,
-              size: s.size,
-              price: s.price,
-              category: item.category,
-              description: item.description,
-              image_url: item.image_url,
-            }))
-        )
-        setFlatItems(flat)
+        const items = data.map((item) => {
+          const sizes = [...item.menu_sizes].sort(
+            (a, b) => ['S', 'M', 'L'].indexOf(a.size) - ['S', 'M', 'L'].indexOf(b.size)
+          )
+          return {
+            cardKey: item.id,
+            menu_item_id: item.id,
+            name: item.name,
+            category: item.category,
+            description: item.description,
+            image_url: item.image_url,
+            sizes,
+            price: sizes[0]?.price ?? 0,
+          }
+        })
+        setFlatItems(items)
       }
       setLoading(false)
     }

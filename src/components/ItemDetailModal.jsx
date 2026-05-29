@@ -10,25 +10,25 @@ const CATEGORY_EMOJI = {
 
 export default function ItemDetailModal({ item, onClose }) {
   const { dispatch } = useCart()
+  const [selectedSize, setSelectedSize] = useState(item.sizes?.[0] ?? null)
   const [quantity, setQuantity] = useState(1)
   const [note, setNote] = useState('')
   const [added, setAdded] = useState(false)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = ''
-    }
+    return () => { document.body.style.overflow = '' }
   }, [])
 
   function addToCart() {
+    if (!selectedSize) return
     dispatch({
       type: 'ADD_ITEM',
       item: {
         menu_item_id: item.menu_item_id,
         menu_item_name: item.name,
-        size: item.size,
-        price: item.price,
+        size: selectedSize.size,
+        price: selectedSize.price,
         quantity,
         note,
       },
@@ -37,13 +37,13 @@ export default function ItemDetailModal({ item, onClose }) {
     setTimeout(onClose, 700)
   }
 
+  const total = (selectedSize?.price ?? 0) * quantity
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <span className="modal-title">
-            {item.name} <span className="modal-size-badge">{item.size}</span>
-          </span>
+          <span className="modal-title">{item.name}</span>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
 
@@ -59,8 +59,25 @@ export default function ItemDetailModal({ item, onClose }) {
 
         <div className="modal-body">
           <p className="modal-category">{item.category}</p>
-          <p className="modal-price">฿{item.price} บาท</p>
           {item.description && <p className="modal-desc">{item.description}</p>}
+
+          {item.sizes?.length > 0 && (
+            <>
+              <p className="section-label">เลือกขนาด</p>
+              <div className="size-selector">
+                {item.sizes.map((s) => (
+                  <button
+                    key={s.size}
+                    className={`size-btn ${selectedSize?.size === s.size ? 'size-btn--active' : ''}`}
+                    onClick={() => setSelectedSize(s)}
+                  >
+                    <span className="size-btn-label">{s.size}</span>
+                    <span className="size-btn-price">฿{Number(s.price).toFixed(0)}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
           <p className="section-label">จำนวน</p>
           <div className="qty-control">
@@ -73,7 +90,7 @@ export default function ItemDetailModal({ item, onClose }) {
           <textarea
             className="note-input"
             rows={2}
-            placeholder="ระบุความต้องการเพิ่มเติม เช่น ไม่ใส่ผักชี, เพิ่มน้ำจิ้ม..."
+            placeholder="เช่น ไม่ใส่ผักชี, เพิ่มน้ำจิ้ม..."
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
@@ -81,11 +98,9 @@ export default function ItemDetailModal({ item, onClose }) {
           <button
             className={`btn-add-cart-modal ${added ? 'added' : ''}`}
             onClick={addToCart}
-            disabled={added}
+            disabled={added || !selectedSize}
           >
-            {added
-              ? '✓ เพิ่มลงตะกร้าแล้ว!'
-              : `เพิ่มตะกร้า — ฿${(item.price * quantity).toFixed(0)}`}
+            {added ? '✓ เพิ่มลงตะกร้าแล้ว!' : `เพิ่มตะกร้า — ฿${total.toFixed(0)}`}
           </button>
         </div>
       </div>

@@ -411,6 +411,24 @@ ul { list-style: none; margin: 0; padding: 0; }
 .modal-img-placeholder { font-size: 5rem; }
 .modal-body { padding: 16px; }
 .modal-category { font-size: .78rem; color: var(--text-muted); }
+.size-selector { display: flex; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.size-btn {
+  flex: 1;
+  min-width: 72px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: all .15s;
+}
+.size-btn--active { border-color: var(--primary); background: var(--primary-lt); }
+.size-btn-label { font-size: .95rem; font-weight: 700; color: var(--text); }
+.size-btn-price { font-size: .8rem; color: var(--primary); font-weight: 600; }
 .modal-price {
   font-size: 1.2rem;
   font-weight: 800;
