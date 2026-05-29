@@ -36,7 +36,10 @@ export function useMenu() {
       }
       setLoading(false)
     }
+
     fetchMenu()
+    window.addEventListener('focus', fetchMenu)
+    return () => window.removeEventListener('focus', fetchMenu)
   }, [])
 
   return { flatItems, loading, error }
