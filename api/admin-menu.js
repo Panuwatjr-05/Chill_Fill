@@ -57,6 +57,13 @@ export default async function handler(req, res) {
 
   if (req.method === 'DELETE') {
     const { id } = req.body
+    const { count } = await supabase
+      .from('order_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('menu_item_id', id)
+    if (count > 0) {
+      return res.status(409).json({ error: 'เมนูนี้มีประวัติออเดอร์ ไม่สามารถลบได้\nให้กด "ปิด" เพื่อซ่อนจากลูกค้าแทนครับ' })
+    }
     await supabase.from('menu_sizes').delete().eq('menu_item_id', id)
     const { error } = await supabase.from('menu_items').delete().eq('id', id)
     if (error) return res.status(500).json({ error: error.message })

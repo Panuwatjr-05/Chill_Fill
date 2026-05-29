@@ -99,7 +99,12 @@ export default function AdminPage() {
 
   async function handleDelete(id) {
     if (!confirm('ลบเมนูนี้?')) return
-    await fetch('/api/admin-menu', { method: 'DELETE', headers: authHeaders, body: JSON.stringify({ id }) })
+    const res = await fetch('/api/admin-menu', { method: 'DELETE', headers: authHeaders, body: JSON.stringify({ id }) })
+    if (!res.ok) {
+      const d = await res.json()
+      alert(d.error)
+      return
+    }
     fetchItems()
   }
 
