@@ -42,6 +42,7 @@ export default function AdminPage() {
 
   const [items, setItems] = useState([])
   const [menuLoading, setMenuLoading] = useState(false)
+  const [showDisabled, setShowDisabled] = useState(false)
   const [modal, setModal] = useState(null)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
@@ -178,7 +179,7 @@ export default function AdminPage() {
           </div>
           {menuLoading ? <p className="admin-loading">กำลังโหลด...</p> : (
             <div className="admin-list">
-              {items.map((item) => (
+              {items.filter(i => showDisabled || i.is_available).map((item) => (
                 <div key={item.id} className={`admin-item${!item.is_available ? ' admin-item--off' : ''}`}>
                   {item.image_url ? (
                     <img src={item.image_url} alt={item.name} className="admin-item-img" />
@@ -210,6 +211,11 @@ export default function AdminPage() {
                 </div>
               ))}
             </div>
+          )}
+          {items.some(i => !i.is_available) && (
+            <button className="admin-show-disabled" onClick={() => setShowDisabled(v => !v)}>
+              {showDisabled ? 'ซ่อนรายการที่ปิด' : `แสดงรายการที่ปิด (${items.filter(i => !i.is_available).length})`}
+            </button>
           )}
           {modal && (
             <MenuModal form={modal} saving={saving} error={formError} adminPin={storedPin}

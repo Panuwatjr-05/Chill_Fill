@@ -978,6 +978,18 @@ ul { list-style: none; margin: 0; padding: 0; }
   transition: color .15s, border-color .15s;
 }
 .admin-logout-btn:hover { color: #e53e3e; border-color: #e53e3e; }
+.admin-show-disabled {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1.5px dashed #ddd;
+  background: transparent;
+  font-size: .82rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.admin-show-disabled:hover { border-color: var(--primary); color: var(--primary); }
 .admin-tab {
   flex: 1;
   padding: 9px 12px;
