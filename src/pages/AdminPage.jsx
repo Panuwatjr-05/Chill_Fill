@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 
 const CATEGORIES = ['ข้าว', 'ก๋วยเตี๋ยว', 'ชา', 'กาแฟ']
-const SIZE_OPTIONS = ['S', 'M', 'L']
+const FOOD_CATEGORIES = new Set(['ข้าว', 'ก๋วยเตี๋ยว'])
+const SIZE_OPTIONS_FOOD = [{ size: 'S', label: 'ธรรมดา' }, { size: 'M', label: 'พิเศษ' }]
+const SIZE_OPTIONS_DRINK = [{ size: 'S', label: 'S' }, { size: 'M', label: 'M' }, { size: 'L', label: 'L' }]
 
 const STATUS_LABEL = {
   pending: 'รอสลิป',
@@ -368,9 +370,9 @@ function MenuModal({ form: initial, saving, error, onSave, onClose, adminPin }) 
 
           <label className="form-label">ราคาตามขนาด</label>
           <div className="admin-sizes">
-            {SIZE_OPTIONS.map((size) => (
+            {(FOOD_CATEGORIES.has(form.category) ? SIZE_OPTIONS_FOOD : SIZE_OPTIONS_DRINK).map(({ size, label }) => (
               <div key={size} className="admin-size-row">
-                <span className="admin-size-label">{size}</span>
+                <span className="admin-size-label">{label}</span>
                 <input type="number" className="form-input admin-size-input" placeholder="฿" value={getSizePrice(size)} onChange={(e) => setSizePrice(size, e.target.value)} min="0" />
               </div>
             ))}
